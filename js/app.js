@@ -121,6 +121,36 @@ function renderFileList() {
   `).join('');
 }
 
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error || new Error('Could not read file'));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function buildUploadPayload(files) {
+  const maxSizeMb = (typeof CONFIG !== 'undefined' && CONFIG.MAX_UPLOAD_SIZE_MB) ? CONFIG.MAX_UPLOAD_SIZE_MB : 8;
+  const maxBytes = maxSizeMb * 1024 * 1024;
+  const oversized = files.find(file => file.size > maxBytes);
+
+  if (oversized) {
+    throw new Error(`${oversized.name} is larger than ${maxSizeMb} MB. Please upload a smaller file.`);
+  }
+
+  return Promise.all(files.map(async file => {
+    const dataUrl = await readFileAsDataUrl(file);
+    const base64 = String(dataUrl).split(',')[1] || '';
+    return {
+      name: file.name,
+      type: file.type || 'application/octet-stream',
+      size: file.size,
+      data: base64,
+    };
+  }));
+}
+
 // ======================== DOC OPTION ========================
 function selectDocOption(n) {
   docOptionSelected = n;
@@ -197,7 +227,9 @@ async function sendToGoogleSheets(data) {
   const statusEl = document.getElementById('sheetsStatus');
   statusEl.style.display = 'block';
   statusEl.className = 'sheets-status-saving';
-  statusEl.textContent = '⏳ Saving to Google Sheets...';
+  statusEl.textContent = data.files && data.files.length
+    ? 'Saving record and uploading files to Google Drive...'
+    : 'Saving to Google Sheets...';
 
   try {
     // Use no-cors mode — Apps Script returns a redirect that causes CORS issues
@@ -213,11 +245,13 @@ async function sendToGoogleSheets(data) {
 
     // With no-cors we can't read the response, so assume success if no exception
     statusEl.className = 'sheets-status-success';
-    statusEl.textContent = '✓ Record saved to Google Sheets';
+    statusEl.textContent = data.files && data.files.length
+      ? 'Record saved and files sent to Google Drive'
+      : 'Record saved to Google Sheets';
     return { success: true };
   } catch (err) {
     statusEl.className = 'sheets-status-error';
-    statusEl.textContent = '⚠ Could not reach Google Sheets — record saved locally only.';
+    statusEl.textContent = 'Could not reach Google Sheets or Drive - record saved locally only.';
     console.error('Sheets error:', err);
     return { success: false, error: err.message };
   }
@@ -227,11 +261,21 @@ async function sendToGoogleSheets(data) {
 async function submitForm() {
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Submitting…';
+  submitBtn.textContent = uploadedFiles.length ? 'Uploading...' : 'Submitting...';
 
   const ref = 'OFF-' + Math.floor(1000 + Math.random() * 9000);
   const checkedItems = checkItems.filter(i => i.checked).map(i => i.name);
   const filledDocs = docRows.filter(r => r.name.trim());
+
+  let filePayloads = [];
+  try {
+    filePayloads = await buildUploadPayload(uploadedFiles);
+  } catch (err) {
+    alert(err.message);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit offboarding ✓';
+    return;
+  }
 
   const sub = {
     id: document.getElementById('empId').value,
@@ -249,10 +293,13 @@ async function submitForm() {
     submittedAt: new Date().toISOString(),
     refCode: ref,
     fileCount: uploadedFiles.length,
+    files: filePayloads,
   };
 
   // Send to Google Sheets (non-blocking if no URL configured)
   const sheetsResult = await sendToGoogleSheets(sub);
+
+  delete sub.files;
 
   // Store locally
   submissions.unshift(sub);

@@ -23,4 +23,7 @@ const CONFIG = {
 
   // Optional: customize the portal name shown in the browser tab
   APP_NAME: "Staff Offboarding Portal",
+
+  // Optional: maximum size per uploaded file before sending to Google Drive
+  MAX_UPLOAD_SIZE_MB: 8,
 };

@@ -19,6 +19,11 @@
  */
 
 const SHEET_NAME = "Submissions";
+const DRIVE_FOLDER_NAME = "Offboarding Uploads";
+
+// Optional: paste a Google Drive folder ID here to save uploads into an existing folder.
+// Leave blank to let the script create/use "Offboarding Uploads" in your Drive.
+const DRIVE_FOLDER_ID = "https://drive.google.com/drive/folders/1VnGWik_eYfo5-ToAfY1gpQkeCjd9pNfI";
 
 // Column headers — must match the order in appendRow() below
 const HEADERS = [
@@ -37,6 +42,7 @@ const HEADERS = [
   "Doc Recipient",
   "Documents",
   "File Count",
+  "File Links",
   "Status"
 ];
 
@@ -65,9 +71,84 @@ function getOrCreateSheet() {
     sheet.setColumnWidth(8, 200);  // Email
     sheet.setColumnWidth(11, 250); // Checked Items
     sheet.setColumnWidth(14, 300); // Documents
+    sheet.setColumnWidth(16, 350); // File Links
   }
 
+  ensureHeaders(sheet);
+
   return sheet;
+}
+
+function ensureHeaders(sheet) {
+  let headerRange = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), HEADERS.length));
+  let existing = headerRange.getValues()[0];
+  const hasFileLinks = existing.indexOf("File Links") !== -1;
+  const statusIndex = existing.indexOf("Status");
+
+  if (!hasFileLinks && statusIndex !== -1) {
+    sheet.insertColumnBefore(statusIndex + 1);
+    sheet.getRange(1, statusIndex + 1).setValue("File Links");
+    headerRange = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), HEADERS.length));
+    existing = headerRange.getValues()[0];
+  }
+
+  HEADERS.forEach((header, i) => {
+    if (existing[i] !== header) {
+      sheet.getRange(1, i + 1).setValue(header);
+    }
+  });
+
+  const headerRangeFinal = sheet.getRange(1, 1, 1, HEADERS.length);
+  headerRangeFinal.setBackground("#2B5CE6");
+  headerRangeFinal.setFontColor("#FFFFFF");
+  headerRangeFinal.setFontWeight("bold");
+  headerRangeFinal.setFontSize(11);
+  sheet.setFrozenRows(1);
+}
+
+function getUploadFolder() {
+  if (DRIVE_FOLDER_ID) {
+    return DriveApp.getFolderById(DRIVE_FOLDER_ID);
+  }
+
+  const folders = DriveApp.getFoldersByName(DRIVE_FOLDER_NAME);
+  if (folders.hasNext()) {
+    return folders.next();
+  }
+
+  return DriveApp.createFolder(DRIVE_FOLDER_NAME);
+}
+
+function safeFileName(name) {
+  return String(name || "upload")
+    .replace(/[\\/:*?"<>|#%{}~&]/g, "-")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 120) || "upload";
+}
+
+function saveUploadedFiles(files, refCode, employeeId) {
+  if (!files || !files.length) {
+    return [];
+  }
+
+  const folder = getUploadFolder();
+  const prefix = [refCode, employeeId].filter(Boolean).join("_");
+
+  return files
+    .filter(file => file && file.data)
+    .map(file => {
+      const bytes = Utilities.base64Decode(file.data);
+      const fileName = `${prefix ? prefix + "_" : ""}${safeFileName(file.name)}`;
+      const blob = Utilities.newBlob(bytes, file.type || "application/octet-stream", fileName);
+      const driveFile = folder.createFile(blob);
+
+      return {
+        name: driveFile.getName(),
+        url: driveFile.getUrl(),
+        id: driveFile.getId(),
+      };
+    });
 }
 
 // Handle POST requests from the portal
@@ -102,6 +183,11 @@ function doPost(e) {
       ? new Date(data.submittedAt).toLocaleString("en-GB")
       : new Date().toLocaleString("en-GB");
 
+    const savedFiles = saveUploadedFiles(data.files || [], data.refCode || "", data.id || "");
+    const fileLinksStr = savedFiles
+      .map(file => `${file.name}: ${file.url}`)
+      .join(" | ");
+
     // Append the row in the same order as HEADERS
     sheet.appendRow([
       data.refCode || "",
@@ -119,6 +205,7 @@ function doPost(e) {
       data.docRecipient || "",
       docsStr,
       data.fileCount || 0,
+      fileLinksStr,
       data.status || "submitted"
     ]);
 
