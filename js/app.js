@@ -19,6 +19,11 @@ let submissions = [
   { id:'EMP-0005', name:'Wei Zhang', desig:'Finance Analyst', dept:'Finance', lastDay:'2026-05-18', email:'w.zhang@co.com', items:['Laptop','Phone','Mouse','Monitor'], checkedItems:['Laptop','Phone','Mouse','Monitor'], docMethod:1, docRecipient:'', docs:[{name:'Q1 reports',type:'Excel',notes:'Shared drive',copies:'1'},{name:'Audit trail',type:'PDF',notes:'Archived',copies:'1'}], status:'submitted', submittedAt: new Date(Date.now()-86400000*7).toISOString(), refCode:'OFF-3388', driveFolder:'', driveFolderName:'', fileCount:0 },
 ];
 
+function getMaxUploadSizeBytes() {
+  const mb = Number((typeof CONFIG !== 'undefined' && CONFIG.MAX_UPLOAD_SIZE_MB) || 8);
+  return Math.max(1, mb) * 1024 * 1024;
+}
+
 // ======================== INIT ========================
 function init() {
   if (typeof CONFIG !== 'undefined' && CONFIG.APP_NAME) {
@@ -97,8 +102,30 @@ function addCustomItem() {
 
 // ======================== FILES ========================
 function handleFiles(files) {
-  Array.from(files).forEach(f => { if (uploadedFiles.length < 10) uploadedFiles.push(f); });
+  const maxSizeBytes = getMaxUploadSizeBytes();
+  const skipped = [];
+
+  Array.from(files).forEach(f => {
+    if (uploadedFiles.length >= 10) {
+      skipped.push(`${f.name} (file limit reached)`);
+      return;
+    }
+    if (f.size > maxSizeBytes) {
+      skipped.push(`${f.name} (larger than ${Math.round(maxSizeBytes / 1024 / 1024)} MB)`);
+      return;
+    }
+    uploadedFiles.push(f);
+  });
+
   renderFileList();
+
+  if (skipped.length) {
+    alert(
+      'Some files were not added:\n- ' +
+      skipped.join('\n- ') +
+      '\n\nPlease upload smaller files or reduce the number of files.'
+    );
+  }
 }
 function handleDrag(e, on) { e.preventDefault(); document.getElementById('uploadZone').classList.toggle('drag', on); }
 function handleDrop(e) { e.preventDefault(); document.getElementById('uploadZone').classList.remove('drag'); handleFiles(e.dataTransfer.files); }
@@ -234,7 +261,7 @@ async function uploadFilesToDrive(employeeName, empId, refCode) {
     }
   }
 
-  return { success: allOk, folderName };
+  return { success: allOk, folderName, attempted: uploadedFiles.length };
 }
 
 // ======================== SEND FORM TO SHEETS ========================
@@ -263,10 +290,14 @@ async function submitForm() {
 
   // ── Step 1: Upload files to Google Drive ──
   let driveFolderName = '';
+  let driveUploadAttempted = false;
+  let driveUploadFailed = false;
   if (uploadedFiles.length > 0) {
     showSpinner(`Uploading file 1 of ${uploadedFiles.length}…`);
     const driveResult = await uploadFilesToDrive(empName, empId, ref);
     driveFolderName = driveResult.folderName || '';
+    driveUploadAttempted = !driveResult.skipped;
+    driveUploadFailed = !driveResult.success;
   }
 
   // ── Step 2: Submit form data to Sheets ──
@@ -304,7 +335,14 @@ async function submitForm() {
 
   if (driveFolderName) {
     const el = document.getElementById('driveFolderInfo');
-    if (el) { el.style.display = 'block'; el.innerHTML = `&#128193; Files saved to Drive folder: <strong>${driveFolderName}</strong>`; }
+    if (el) {
+      el.style.display = 'block';
+      el.innerHTML = driveUploadFailed
+        ? `&#9888; Drive upload could not be confirmed. Check Apps Script Executions and look for the folder <strong>${driveFolderName}</strong>.`
+        : driveUploadAttempted
+          ? `&#128193; Drive upload was sent for folder: <strong>${driveFolderName}</strong>. Please verify the files in Google Drive.`
+          : '';
+    }
   }
   if (sheetsResult.success) {
     const el = document.getElementById('sheetsConfirm');

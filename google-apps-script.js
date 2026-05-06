@@ -24,7 +24,13 @@
 
 // ── Configuration ──────────────────────────────────────────
 
-const SHEET_NAME   = "Submissions";
+const SHEET_NAME = "Submissions";
+
+// Best option: paste the Google Drive folder ID here to force uploads
+// into one exact parent folder. Example ID:
+// https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz
+// Leave as "" to fall back to DRIVE_PARENT_FOLDER_NAME lookup.
+const DRIVE_PARENT_FOLDER_ID = "";
 
 // All employee Drive folders will live inside this parent folder.
 // Leave as "" to save directly to My Drive root.
@@ -58,6 +64,10 @@ const HEADERS = [
  * Returns (or creates) the parent "Offboarding Uploads" folder.
  */
 function getParentFolder() {
+  if (DRIVE_PARENT_FOLDER_ID) {
+    return DriveApp.getFolderById(DRIVE_PARENT_FOLDER_ID);
+  }
+
   if (!DRIVE_PARENT_FOLDER_NAME) return DriveApp.getRootFolder();
 
   const iter = DriveApp.getFoldersByName(DRIVE_PARENT_FOLDER_NAME);
@@ -116,6 +126,10 @@ function doPost(e) {
  *   base64Data  – base64-encoded file content (no data-URI prefix)
  */
 function handleFileUpload(data) {
+  if (!data.folderName) throw new Error("Missing folderName");
+  if (!data.fileName) throw new Error("Missing fileName");
+  if (!data.base64Data) throw new Error("Missing file data");
+
   const folder   = getEmployeeFolder(data.folderName);
   const bytes    = Utilities.base64Decode(data.base64Data);
   const blob     = Utilities.newBlob(bytes, data.mimeType || 'application/octet-stream', data.fileName);
