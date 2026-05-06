@@ -26,14 +26,18 @@
 
 const SHEET_NAME = "Submissions";
 
-// Best option: paste the Google Drive folder ID here to force uploads
-// into one exact parent folder. Example ID:
-// https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz
-// Leave as "" to fall back to DRIVE_PARENT_FOLDER_NAME lookup.
+// Recommended: paste the exact Google Drive parent folder ID here.
+// Example:
+//   https://drive.google.com/drive/folders/1AbCdEfGhIjKlMnOpQrStUvWxYz
+// becomes:
+//   const DRIVE_PARENT_FOLDER_ID = "1AbCdEfGhIjKlMnOpQrStUvWxYz";
+//
+// If left blank, the script falls back to DRIVE_PARENT_FOLDER_NAME.
 const DRIVE_PARENT_FOLDER_ID = "";
 
-// All employee Drive folders will live inside this parent folder.
-// Leave as "" to save directly to My Drive root.
+// Fallback only: if DRIVE_PARENT_FOLDER_ID is blank, uploads go into the
+// first folder with this name. If none exists, it will be created.
+// Leave both ID and name blank to save directly in My Drive root.
 const DRIVE_PARENT_FOLDER_NAME = "Offboarding Uploads";
 
 // Column headers for the Sheets tab
@@ -65,7 +69,11 @@ const HEADERS = [
  */
 function getParentFolder() {
   if (DRIVE_PARENT_FOLDER_ID) {
-    return DriveApp.getFolderById(DRIVE_PARENT_FOLDER_ID);
+    try {
+      return DriveApp.getFolderById(DRIVE_PARENT_FOLDER_ID);
+    } catch (err) {
+      throw new Error("Invalid DRIVE_PARENT_FOLDER_ID or no access to that folder");
+    }
   }
 
   if (!DRIVE_PARENT_FOLDER_NAME) return DriveApp.getRootFolder();
@@ -142,6 +150,7 @@ function handleFileUpload(data) {
     success:    true,
     fileId:     file.getId(),
     fileUrl:    file.getUrl(),
+    folderId:   folder.getId(),
     folderUrl:  folder.getUrl(),
   });
 }
@@ -252,7 +261,25 @@ function getOrCreateSheet() {
 function doGet(e) {
   const sheet = getOrCreateSheet();
   const count = Math.max(0, sheet.getLastRow() - 1);
-  return respond({ status: "ok", sheet: SHEET_NAME, submissions: count, timestamp: new Date().toISOString() });
+  let parentFolder = null;
+  let parentFolderError = "";
+
+  try {
+    parentFolder = getParentFolder();
+  } catch (err) {
+    parentFolderError = err.message;
+  }
+
+  return respond({
+    status: "ok",
+    sheet: SHEET_NAME,
+    submissions: count,
+    driveParentFolderId: parentFolder ? parentFolder.getId() : "",
+    driveParentFolderName: parentFolder ? parentFolder.getName() : "",
+    driveParentFolderUrl: parentFolder ? parentFolder.getUrl() : "",
+    driveParentFolderError: parentFolderError,
+    timestamp: new Date().toISOString()
+  });
 }
 
 // ── Utility ─────────────────────────────────────────────────
