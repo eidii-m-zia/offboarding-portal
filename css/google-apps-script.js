@@ -1,31 +1,36 @@
 /**
  * ============================================================
- *  Google Apps Script — Offboarding Portal Webhook
+ *  Google Apps Script — Offboarding Portal
+ *  Handles: file uploads to Google Drive + form data to Sheets
  * ============================================================
  *
- * HOW TO SET UP:
+ * HOW TO SET UP (first time):
  * 1. Open your Google Sheet.
  * 2. Click Extensions → Apps Script.
  * 3. Delete any existing code and paste ALL of this file.
- * 4. Click Save (floppy disk icon).
+ * 4. Click Save (💾).
  * 5. Click Deploy → New deployment.
  *    - Type: Web app
  *    - Execute as: Me
  *    - Who has access: Anyone
- * 6. Click Deploy. Authorize when prompted.
- * 7. Copy the "Web app URL" shown.
- * 8. Paste it into js/config.js as SHEETS_WEBHOOK_URL.
+ * 6. Click Deploy. Authorize all permissions (Drive + Sheets).
+ * 7. Copy the Web app URL → paste into js/config.js.
+ *
+ * AFTER EDITING THIS FILE:
+ * Always create a NEW deployment (not "manage existing").
+ * Old deployments run the old code — new URL = new code.
  * ============================================================
  */
 
-const SHEET_NAME = "Submissions";
-const DRIVE_FOLDER_NAME = "Offboarding Uploads";
+// ── Configuration ──────────────────────────────────────────
 
-// Optional: paste a Google Drive folder ID here to save uploads into an existing folder.
-// Leave blank to let the script create/use "Offboarding Uploads" in your Drive.
-const DRIVE_FOLDER_ID = "";
+const SHEET_NAME   = "Submissions";
 
-// Column headers — must match the order in appendRow() below
+// All employee Drive folders will live inside this parent folder.
+// Leave as "" to save directly to My Drive root.
+const DRIVE_PARENT_FOLDER_NAME = "Offboarding Uploads";
+
+// Column headers for the Sheets tab
 const HEADERS = [
   "Ref Code",
   "Submitted At",
@@ -42,126 +47,40 @@ const HEADERS = [
   "Doc Recipient",
   "Documents",
   "File Count",
-  "File Links",
+  "Drive Folder Name",
+  "Drive Folder Link",
   "Status"
 ];
 
-function getOrCreateSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
+// ── Drive helpers ───────────────────────────────────────────
 
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-    sheet.appendRow(HEADERS);
+/**
+ * Returns (or creates) the parent "Offboarding Uploads" folder.
+ */
+function getParentFolder() {
+  if (!DRIVE_PARENT_FOLDER_NAME) return DriveApp.getRootFolder();
 
-    // Style the header row
-    const headerRange = sheet.getRange(1, 1, 1, HEADERS.length);
-    headerRange.setBackground("#2B5CE6");
-    headerRange.setFontColor("#FFFFFF");
-    headerRange.setFontWeight("bold");
-    headerRange.setFontSize(11);
-    sheet.setFrozenRows(1);
-    sheet.setColumnWidth(1, 100);  // Ref Code
-    sheet.setColumnWidth(2, 160);  // Submitted At
-    sheet.setColumnWidth(3, 100);  // Employee ID
-    sheet.setColumnWidth(4, 160);  // Full Name
-    sheet.setColumnWidth(5, 180);  // Designation
-    sheet.setColumnWidth(6, 130);  // Department
-    sheet.setColumnWidth(7, 130);  // Last Day
-    sheet.setColumnWidth(8, 200);  // Email
-    sheet.setColumnWidth(11, 250); // Checked Items
-    sheet.setColumnWidth(14, 300); // Documents
-    sheet.setColumnWidth(16, 350); // File Links
-  }
-
-  ensureHeaders(sheet);
-
-  return sheet;
+  const iter = DriveApp.getFoldersByName(DRIVE_PARENT_FOLDER_NAME);
+  if (iter.hasNext()) return iter.next();
+  return DriveApp.createFolder(DRIVE_PARENT_FOLDER_NAME);
 }
 
-function ensureHeaders(sheet) {
-  let headerRange = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), HEADERS.length));
-  let existing = headerRange.getValues()[0];
-  const hasFileLinks = existing.indexOf("File Links") !== -1;
-  const statusIndex = existing.indexOf("Status");
-
-  if (!hasFileLinks && statusIndex !== -1) {
-    sheet.insertColumnBefore(statusIndex + 1);
-    sheet.getRange(1, statusIndex + 1).setValue("File Links");
-    headerRange = sheet.getRange(1, 1, 1, Math.max(sheet.getLastColumn(), HEADERS.length));
-    existing = headerRange.getValues()[0];
-  }
-
-  HEADERS.forEach((header, i) => {
-    if (existing[i] !== header) {
-      sheet.getRange(1, i + 1).setValue(header);
-    }
-  });
-
-  const headerRangeFinal = sheet.getRange(1, 1, 1, HEADERS.length);
-  headerRangeFinal.setBackground("#2B5CE6");
-  headerRangeFinal.setFontColor("#FFFFFF");
-  headerRangeFinal.setFontWeight("bold");
-  headerRangeFinal.setFontSize(11);
-  sheet.setFrozenRows(1);
+/**
+ * Returns (or creates) an employee subfolder inside the parent.
+ * folderName example: "Sarah Chen (EMP-0042) — OFF-3421"
+ */
+function getEmployeeFolder(folderName) {
+  const parent = getParentFolder();
+  const iter   = parent.getFoldersByName(folderName);
+  if (iter.hasNext()) return iter.next();
+  return parent.createFolder(folderName);
 }
 
-function getUploadFolder() {
-  if (DRIVE_FOLDER_ID) {
-    try {
-      return DriveApp.getFolderById(DRIVE_FOLDER_ID);
-    } catch (err) {
-      // Fallback to named folder when ID is invalid or inaccessible.
-      Logger.log("DRIVE_FOLDER_ID inaccessible, falling back to folder name: " + err.message);
-    }
-  }
+// ── Request router ──────────────────────────────────────────
 
-  const folders = DriveApp.getFoldersByName(DRIVE_FOLDER_NAME);
-  if (folders.hasNext()) {
-    return folders.next();
-  }
-
-  return DriveApp.createFolder(DRIVE_FOLDER_NAME);
-}
-
-function safeFileName(name) {
-  return String(name || "upload")
-    .replace(/[\\/:*?"<>|#%{}~&]/g, "-")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 120) || "upload";
-}
-
-function saveUploadedFiles(files, refCode, employeeId) {
-  if (!files || !files.length) {
-    return [];
-  }
-
-  const folder = getUploadFolder();
-  const prefix = [refCode, employeeId].filter(Boolean).join("_");
-
-  return files
-    .filter(file => file && file.data)
-    .map(file => {
-      const bytes = Utilities.base64Decode(file.data);
-      const fileName = `${prefix ? prefix + "_" : ""}${safeFileName(file.name)}`;
-      const blob = Utilities.newBlob(bytes, file.type || "application/octet-stream", fileName);
-      const driveFile = folder.createFile(blob);
-
-      return {
-        name: driveFile.getName(),
-        url: driveFile.getUrl(),
-        id: driveFile.getId(),
-      };
-    });
-}
-
-// Handle POST requests from the portal
 function doPost(e) {
   try {
     let data;
-
-    // Parse payload — sent as FormData field "payload"
     if (e.parameter && e.parameter.payload) {
       data = JSON.parse(e.parameter.payload);
     } else if (e.postData && e.postData.contents) {
@@ -170,88 +89,162 @@ function doPost(e) {
       throw new Error("No payload received");
     }
 
-    const sheet = getOrCreateSheet();
+    const action = data.action || 'submitForm';
 
-    // Format documents as readable string
-    const docsStr = (data.docs || [])
-      .filter(d => d.name)
-      .map(d => `${d.name} (${d.type || '?'}) — ${d.notes || ''} × ${d.copies || 1}`)
-      .join(" | ");
-
-    const docMethodStr = data.docMethod === 1
-      ? "Admin team"
-      : data.docMethod === 2
-        ? `Specific person: ${data.docRecipient || ''}`
-        : "Not selected";
-
-    const submittedAt = data.submittedAt
-      ? new Date(data.submittedAt).toLocaleString("en-GB")
-      : new Date().toLocaleString("en-GB");
-
-    let fileLinksStr = "";
-    try {
-      const savedFiles = saveUploadedFiles(data.files || [], data.refCode || "", data.id || "");
-      fileLinksStr = savedFiles.map(file => `${file.name}: ${file.url}`).join(" | ");
-      if ((data.files || []).length && !savedFiles.length) {
-        fileLinksStr = "UPLOAD_WARNING: files payload received but no files were created";
-      }
-    } catch (uploadErr) {
-      fileLinksStr = `UPLOAD_ERROR: ${uploadErr.message}`;
-    }
-
-    // Append the row in the same order as HEADERS
-    sheet.appendRow([
-      data.refCode || "",
-      submittedAt,
-      data.id || "",
-      data.name || "",
-      data.desig || "",
-      data.dept || "",
-      data.lastDay || "",
-      data.email || "",
-      (data.checkedItems || []).length,
-      (data.items || []).length,
-      (data.checkedItems || []).join(", "),
-      docMethodStr,
-      data.docRecipient || "",
-      docsStr,
-      data.fileCount || 0,
-      fileLinksStr,
-      data.status || "submitted"
-    ]);
-
-    // Auto-color submitted vs pending
-    const lastRow = sheet.getLastRow();
-    const statusCol = HEADERS.indexOf("Status") + 1;
-    const statusCell = sheet.getRange(lastRow, statusCol);
-    if (data.status === "submitted") {
-      statusCell.setBackground("#EAF5EE").setFontColor("#1D8A5A");
+    if (action === 'uploadFile') {
+      return handleFileUpload(data);
     } else {
-      statusCell.setBackground("#FDF6E3").setFontColor("#B07A10");
+      return handleFormSubmit(data);
     }
-
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: true, ref: data.refCode }))
-      .setMimeType(ContentService.MimeType.JSON);
 
   } catch (err) {
     console.error("doPost error:", err);
-    return ContentService
-      .createTextOutput(JSON.stringify({ success: false, error: err.message }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return respond({ success: false, error: err.message });
   }
 }
 
-// Handle GET requests (health check / test)
+// ── File upload handler ─────────────────────────────────────
+
+/**
+ * Receives a single base64-encoded file and saves it to the
+ * correct employee folder in Google Drive.
+ *
+ * Expected payload fields:
+ *   folderName  – e.g. "Sarah Chen (EMP-0042) — OFF-3421"
+ *   fileName    – original file name
+ *   mimeType    – MIME type string
+ *   base64Data  – base64-encoded file content (no data-URI prefix)
+ */
+function handleFileUpload(data) {
+  const folder   = getEmployeeFolder(data.folderName);
+  const bytes    = Utilities.base64Decode(data.base64Data);
+  const blob     = Utilities.newBlob(bytes, data.mimeType || 'application/octet-stream', data.fileName);
+  const file     = folder.createFile(blob);
+
+  // Make the file viewable by anyone with the link (optional — remove if you want private)
+  // file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return respond({
+    success:    true,
+    fileId:     file.getId(),
+    fileUrl:    file.getUrl(),
+    folderUrl:  folder.getUrl(),
+  });
+}
+
+// ── Form submit handler ─────────────────────────────────────
+
+/**
+ * Appends a new row to the Sheets tab with all form data,
+ * including a link to the employee's Drive folder (if files
+ * were uploaded).
+ */
+function handleFormSubmit(data) {
+  const sheet = getOrCreateSheet();
+
+  // Try to find the Drive folder so we can link to it
+  let folderUrl = '';
+  if (data.driveFolderName) {
+    try {
+      const folder = getEmployeeFolder(data.driveFolderName);
+      folderUrl    = folder.getUrl();
+    } catch (_) {}
+  }
+
+  const docMethodStr = data.docMethod === 1
+    ? "Admin team"
+    : data.docMethod === 2
+      ? `Specific person: ${data.docRecipient || ''}`
+      : "Not selected";
+
+  const docsStr = (data.docs || [])
+    .filter(d => d.name)
+    .map(d => `${d.name} (${d.type || '?'}) — ${d.notes || ''} × ${d.copies || 1}`)
+    .join(" | ");
+
+  const submittedAt = data.submittedAt
+    ? new Date(data.submittedAt).toLocaleString("en-GB")
+    : new Date().toLocaleString("en-GB");
+
+  sheet.appendRow([
+    data.refCode          || "",
+    submittedAt,
+    data.id               || "",
+    data.name             || "",
+    data.desig            || "",
+    data.dept             || "",
+    data.lastDay          || "",
+    data.email            || "",
+    (data.checkedItems    || []).length,
+    (data.items           || []).length,
+    (data.checkedItems    || []).join(", "),
+    docMethodStr,
+    data.docRecipient     || "",
+    docsStr,
+    data.fileCount        || 0,
+    data.driveFolderName  || "",
+    folderUrl,
+    data.status           || "submitted",
+  ]);
+
+  // Colour-code the Status cell
+  const lastRow  = sheet.getLastRow();
+  const statCol  = HEADERS.indexOf("Status") + 1;
+  const statCell = sheet.getRange(lastRow, statCol);
+  if (data.status === "submitted") {
+    statCell.setBackground("#EAF5EE").setFontColor("#1D8A5A");
+  } else {
+    statCell.setBackground("#FDF6E3").setFontColor("#B07A10");
+  }
+
+  // Make Drive Folder Link a clickable hyperlink
+  const linkCol  = HEADERS.indexOf("Drive Folder Link") + 1;
+  if (folderUrl) {
+    const linkCell = sheet.getRange(lastRow, linkCol);
+    linkCell.setFormula(`=HYPERLINK("${folderUrl}","Open folder")`);
+    linkCell.setFontColor("#2B5CE6");
+  }
+
+  return respond({ success: true, ref: data.refCode, folderUrl });
+}
+
+// ── Sheet bootstrap ─────────────────────────────────────────
+
+function getOrCreateSheet() {
+  const ss    = SpreadsheetApp.getActiveSpreadsheet();
+  let   sheet = ss.getSheetByName(SHEET_NAME);
+
+  if (!sheet) {
+    sheet = ss.insertSheet(SHEET_NAME);
+    sheet.appendRow(HEADERS);
+
+    const hdr = sheet.getRange(1, 1, 1, HEADERS.length);
+    hdr.setBackground("#2B5CE6")
+       .setFontColor("#FFFFFF")
+       .setFontWeight("bold")
+       .setFontSize(11);
+    sheet.setFrozenRows(1);
+
+    // Reasonable column widths
+    const widths = [100,160,100,160,180,130,130,200,90,90,240,160,160,300,80,220,120,100];
+    widths.forEach((w, i) => sheet.setColumnWidth(i + 1, w));
+  }
+
+  return sheet;
+}
+
+// ── Health check ────────────────────────────────────────────
+
 function doGet(e) {
   const sheet = getOrCreateSheet();
-  const count = Math.max(0, sheet.getLastRow() - 1); // subtract header row
+  const count = Math.max(0, sheet.getLastRow() - 1);
+  return respond({ status: "ok", sheet: SHEET_NAME, submissions: count, timestamp: new Date().toISOString() });
+}
+
+// ── Utility ─────────────────────────────────────────────────
+
+function respond(obj) {
   return ContentService
-    .createTextOutput(JSON.stringify({
-      status: "ok",
-      sheet: SHEET_NAME,
-      submissions: count,
-      timestamp: new Date().toISOString()
-    }))
+    .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
