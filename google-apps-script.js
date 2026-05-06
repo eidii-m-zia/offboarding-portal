@@ -33,7 +33,7 @@ const SHEET_NAME = "Submissions";
 //   const DRIVE_PARENT_FOLDER_ID = "1AbCdEfGhIjKlMnOpQrStUvWxYz";
 //
 // If left blank, the script falls back to DRIVE_PARENT_FOLDER_NAME.
-const DRIVE_PARENT_FOLDER_ID = "";
+const DRIVE_PARENT_FOLDER_ID = "1VnGWik_eYfo5-ToAfY1gpQkeCjd9pNfI";
 
 // Fallback only: if DRIVE_PARENT_FOLDER_ID is blank, uploads go into the
 // first folder with this name. If none exists, it will be created.

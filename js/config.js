@@ -19,7 +19,7 @@
 
 const CONFIG = {
   // Paste your Google Apps Script Web App URL here:
-  SHEETS_WEBHOOK_URL: "https://script.google.com/macros/s/AKfycbwpyNGBbyhG1SH2q1aKGON3s-T0GWmCkKrdaXkrdWjx8np3yGmpD2-xTR8PQvSM29jIGQ/exec",
+  SHEETS_WEBHOOK_URL: "https://script.google.com/macros/s/AKfycbwbO5AvSV88_VS_QNj7BIoDYrxbKaW77PlnahQynX5frKZ1cvxct4wA80rA2YH4XoMmxg/exec",
 
   // Optional: customize the portal name shown in the browser tab
   APP_NAME: "Staff Offboarding Portal",
