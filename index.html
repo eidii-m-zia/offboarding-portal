@@ -33,7 +33,7 @@
     <div class="sidebar-spacer"></div>
     <div class="sidebar-bottom">
       <div style="margin-bottom:6px;">
-        <a onclick="toggleAdminMode()" style="font-size:11px;color:var(--accent);cursor:pointer;text-decoration:none;opacity: 30%;" id="adminToggle">&#128274; Admin panel</a>
+        <a onclick="toggleAdminMode()" style="font-size:11px;color:var(--accent);cursor:pointer;text-decoration:none;" id="adminToggle">&#128274; Admin panel</a>
       </div>
       v1.0.0 &bull; 2026
     </div>
@@ -203,7 +203,8 @@
         <p>Your offboarding form has been received and logged with the admin team. You will be contacted shortly with next steps.</p>
         <div class="ref-code" id="refCode">REF: ...</div>
         <p style="font-size:12px;margin-top:0.75rem;">Please keep this reference number for your records.</p>
-        <div id="sheetsConfirm" style="margin-top:1rem;font-size:13px;color:var(--success);display:none;">&#10003; Record saved to Google Sheets</div>
+        <div id="sheetsConfirm" style="margin-top:0.5rem;font-size:13px;color:var(--success);display:none;">&#10003; Record saved to Google Sheets</div>
+        <div id="driveFolderInfo" style="margin-top:0.5rem;font-size:13px;color:var(--accent);display:none;"></div>
       </div>
     </div>
 
@@ -240,6 +241,7 @@
               <th onclick="setSort('dept')">Department <span class="sort-arrow" id="sarr-dept"></span></th>
               <th onclick="setSort('date')">Last day <span class="sort-arrow" id="sarr-date"></span></th>
               <th>Items returned</th>
+              <th>Drive files</th>
               <th>Documents</th>
               <th>Status</th>
               <th></th>
@@ -261,6 +263,12 @@
     <p>The admin team will collect the documents from you as soon as possible. Please keep your documents ready and ensure they are labelled clearly.</p>
     <button class="btn-primary" onclick="closePopup()">Got it, continue</button>
   </div>
+</div>
+
+<!-- SPINNER OVERLAY -->
+<div id="spinnerOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:300;align-items:center;justify-content:center;flex-direction:column;gap:16px;">
+  <div class="spinner"></div>
+  <div id="spinnerMsg" style="color:white;font-size:14px;font-weight:500;max-width:280px;text-align:center;line-height:1.5;"></div>
 </div>
 
 <!-- DETAIL MODAL -->

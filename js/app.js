@@ -12,11 +12,11 @@ let checkItems = defaultItems.map(name => ({ name, checked: false }));
 
 let docRows = [];
 let submissions = [
-  { id:'EMP-0001', name:'James Okafor', desig:'Software Engineer', dept:'Engineering', lastDay:'2026-05-15', email:'j.okafor@co.com', items:['Laptop','Phone','Access card'], checkedItems:['Laptop'], docMethod:1, docRecipient:'', docs:[{name:'Project docs',type:'PDF',notes:'Google Drive',copies:'1'}], status:'pending', submittedAt: new Date(Date.now()-86400000*3).toISOString(), refCode:'OFF-3421' },
-  { id:'EMP-0002', name:'Priya Nair', desig:'Marketing Manager', dept:'Marketing', lastDay:'2026-05-12', email:'p.nair@co.com', items:['Laptop','Phone','Timecard','Mouse'], checkedItems:['Laptop','Phone','Timecard','Mouse'], docMethod:2, docRecipient:'Linda Marsh', docs:[{name:'Campaign assets',type:'Folder',notes:'SharePoint',copies:'1'},{name:'Brand guidelines',type:'PDF',notes:'Printed',copies:'2'}], status:'submitted', submittedAt: new Date(Date.now()-86400000*5).toISOString(), refCode:'OFF-3398' },
-  { id:'EMP-0003', name:'Tomás Rivera', desig:'Sales Executive', dept:'Sales', lastDay:'2026-05-08', email:'t.rivera@co.com', items:['Laptop','Phone','Access card'], checkedItems:[], docMethod:1, docRecipient:'', docs:[{name:'Client list',type:'Excel',notes:'Email to admin',copies:'1'}], status:'pending', submittedAt: new Date(Date.now()-86400000*1).toISOString(), refCode:'OFF-3412' },
-  { id:'EMP-0004', name:'Lena Hoffmann', desig:'HR Coordinator', dept:'HR', lastDay:'2026-05-20', email:'l.hoffmann@co.com', items:['Laptop','Timecard','Access card'], checkedItems:['Access card'], docMethod:2, docRecipient:'HR Director', docs:[{name:'Employee contracts',type:'PDF',notes:'Filing cabinet B',copies:'3'}], status:'pending', submittedAt: new Date(Date.now()-86400000*2).toISOString(), refCode:'OFF-3408' },
-  { id:'EMP-0005', name:'Wei Zhang', desig:'Finance Analyst', dept:'Finance', lastDay:'2026-05-18', email:'w.zhang@co.com', items:['Laptop','Phone','Mouse','Monitor'], checkedItems:['Laptop','Phone','Mouse','Monitor'], docMethod:1, docRecipient:'', docs:[{name:'Q1 reports',type:'Excel',notes:'Shared drive',copies:'1'},{name:'Audit trail',type:'PDF',notes:'Archived',copies:'1'}], status:'submitted', submittedAt: new Date(Date.now()-86400000*7).toISOString(), refCode:'OFF-3388' },
+  { id:'EMP-0001', name:'James Okafor', desig:'Software Engineer', dept:'Engineering', lastDay:'2026-05-15', email:'j.okafor@co.com', items:['Laptop','Phone','Access card'], checkedItems:['Laptop'], docMethod:1, docRecipient:'', docs:[{name:'Project docs',type:'PDF',notes:'Google Drive',copies:'1'}], status:'pending', submittedAt: new Date(Date.now()-86400000*3).toISOString(), refCode:'OFF-3421', driveFolder:'', driveFolderName:'', fileCount:0 },
+  { id:'EMP-0002', name:'Priya Nair', desig:'Marketing Manager', dept:'Marketing', lastDay:'2026-05-12', email:'p.nair@co.com', items:['Laptop','Phone','Timecard','Mouse'], checkedItems:['Laptop','Phone','Timecard','Mouse'], docMethod:2, docRecipient:'Linda Marsh', docs:[{name:'Campaign assets',type:'Folder',notes:'SharePoint',copies:'1'},{name:'Brand guidelines',type:'PDF',notes:'Printed',copies:'2'}], status:'submitted', submittedAt: new Date(Date.now()-86400000*5).toISOString(), refCode:'OFF-3398', driveFolder:'', driveFolderName:'', fileCount:0 },
+  { id:'EMP-0003', name:'Tomás Rivera', desig:'Sales Executive', dept:'Sales', lastDay:'2026-05-08', email:'t.rivera@co.com', items:['Laptop','Phone','Access card'], checkedItems:[], docMethod:1, docRecipient:'', docs:[{name:'Client list',type:'Excel',notes:'Email to admin',copies:'1'}], status:'pending', submittedAt: new Date(Date.now()-86400000*1).toISOString(), refCode:'OFF-3412', driveFolder:'', driveFolderName:'', fileCount:0 },
+  { id:'EMP-0004', name:'Lena Hoffmann', desig:'HR Coordinator', dept:'HR', lastDay:'2026-05-20', email:'l.hoffmann@co.com', items:['Laptop','Timecard','Access card'], checkedItems:['Access card'], docMethod:2, docRecipient:'HR Director', docs:[{name:'Employee contracts',type:'PDF',notes:'Filing cabinet B',copies:'3'}], status:'pending', submittedAt: new Date(Date.now()-86400000*2).toISOString(), refCode:'OFF-3408', driveFolder:'', driveFolderName:'', fileCount:0 },
+  { id:'EMP-0005', name:'Wei Zhang', desig:'Finance Analyst', dept:'Finance', lastDay:'2026-05-18', email:'w.zhang@co.com', items:['Laptop','Phone','Mouse','Monitor'], checkedItems:['Laptop','Phone','Mouse','Monitor'], docMethod:1, docRecipient:'', docs:[{name:'Q1 reports',type:'Excel',notes:'Shared drive',copies:'1'},{name:'Audit trail',type:'PDF',notes:'Archived',copies:'1'}], status:'submitted', submittedAt: new Date(Date.now()-86400000*7).toISOString(), refCode:'OFF-3388', driveFolder:'', driveFolderName:'', fileCount:0 },
 ];
 
 // ======================== INIT ========================
@@ -54,9 +54,9 @@ function updateStepNav() {
 }
 
 function validatePage0() {
-  const id = document.getElementById('empId').value.trim();
+  const id   = document.getElementById('empId').value.trim();
   const name = document.getElementById('empName').value.trim();
-  const desig = document.getElementById('empDesig').value.trim();
+  const desig= document.getElementById('empDesig').value.trim();
   const last = document.getElementById('empLastDay').value;
   if (!id || !name || !desig || !last) {
     alert('Please fill in all required fields (Employee ID, Name, Designation, Last working date).');
@@ -64,9 +64,7 @@ function validatePage0() {
   }
   return true;
 }
-
 function validatePage1() { return true; }
-
 function validatePage2() {
   if (docOptionSelected === 2 && !document.getElementById('recipientName').value.trim()) {
     alert('Please enter the recipient name for document handover.');
@@ -87,12 +85,7 @@ function renderCheckGrid() {
     </div>
   `).join('');
 }
-
-function toggleCheck(i) {
-  checkItems[i].checked = !checkItems[i].checked;
-  renderCheckGrid();
-}
-
+function toggleCheck(i) { checkItems[i].checked = !checkItems[i].checked; renderCheckGrid(); }
 function addCustomItem() {
   const inp = document.getElementById('newItemInput');
   const val = inp.value.trim();
@@ -104,9 +97,7 @@ function addCustomItem() {
 
 // ======================== FILES ========================
 function handleFiles(files) {
-  Array.from(files).forEach(f => {
-    if (uploadedFiles.length < 10) uploadedFiles.push(f);
-  });
+  Array.from(files).forEach(f => { if (uploadedFiles.length < 10) uploadedFiles.push(f); });
   renderFileList();
 }
 function handleDrag(e, on) { e.preventDefault(); document.getElementById('uploadZone').classList.toggle('drag', on); }
@@ -115,40 +106,10 @@ function removeFile(i) { uploadedFiles.splice(i, 1); renderFileList(); }
 function renderFileList() {
   document.getElementById('fileList').innerHTML = uploadedFiles.map((f, i) => `
     <div class="file-item">
-      <span>&#128196; ${f.name} <span style="color:var(--muted);font-size:11px;">(${(f.size / 1024).toFixed(1)} KB)</span></span>
+      <span>&#128196; ${f.name} <span style="color:var(--muted);font-size:11px;">(${(f.size/1024).toFixed(1)} KB)</span></span>
       <span class="file-remove" onclick="removeFile(${i})">Remove</span>
     </div>
   `).join('');
-}
-
-function readFileAsDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error || new Error('Could not read file'));
-    reader.readAsDataURL(file);
-  });
-}
-
-async function buildUploadPayload(files) {
-  const maxSizeMb = (typeof CONFIG !== 'undefined' && CONFIG.MAX_UPLOAD_SIZE_MB) ? CONFIG.MAX_UPLOAD_SIZE_MB : 8;
-  const maxBytes = maxSizeMb * 1024 * 1024;
-  const oversized = files.find(file => file.size > maxBytes);
-
-  if (oversized) {
-    throw new Error(`${oversized.name} is larger than ${maxSizeMb} MB. Please upload a smaller file.`);
-  }
-
-  return Promise.all(files.map(async file => {
-    const dataUrl = await readFileAsDataUrl(file);
-    const base64 = String(dataUrl).split(',')[1] || '';
-    return {
-      name: file.name,
-      type: file.type || 'application/octet-stream',
-      size: file.size,
-      data: base64,
-    };
-  }));
 }
 
 // ======================== DOC OPTION ========================
@@ -157,20 +118,16 @@ function selectDocOption(n) {
   document.getElementById('docOpt1').classList.toggle('selected', n === 1);
   document.getElementById('docOpt2').classList.toggle('selected', n === 2);
   document.getElementById('recipientField').style.display = n === 2 ? 'block' : 'none';
-  if (n === 1) { document.getElementById('adminPopup').classList.add('open'); }
+  if (n === 1) document.getElementById('adminPopup').classList.add('open');
 }
 function closePopup() { document.getElementById('adminPopup').classList.remove('open'); }
 
 // ======================== DOC ROWS ========================
 function addDocRow() {
-  const id = Date.now();
-  docRows.push({ id, name: '', type: '', notes: '', copies: '1' });
+  docRows.push({ id: Date.now(), name: '', type: '', notes: '', copies: '1' });
   renderDocTable();
 }
-function removeDocRow(id) {
-  docRows = docRows.filter(r => r.id !== id);
-  renderDocTable();
-}
+function removeDocRow(id) { docRows = docRows.filter(r => r.id !== id); renderDocTable(); }
 function renderDocTable() {
   document.getElementById('docTableBody').innerHTML = docRows.map((r, i) => `
     <tr>
@@ -186,8 +143,8 @@ function renderDocTable() {
 // ======================== REVIEW ========================
 function buildReview() {
   const checkedItems = checkItems.filter(i => i.checked).map(i => i.name);
-  const docMethod = docOptionSelected === 1 ? 'Admin team' : docOptionSelected === 2 ? 'Specific person — ' + document.getElementById('recipientName').value : 'Not selected';
-  const filledDocs = docRows.filter(r => r.name.trim());
+  const docMethod    = docOptionSelected === 1 ? 'Admin team' : docOptionSelected === 2 ? 'Specific person — ' + document.getElementById('recipientName').value : 'Not selected';
+  const filledDocs   = docRows.filter(r => r.name.trim());
 
   document.getElementById('reviewContent').innerHTML = `
     <div class="card-title">Summary</div>
@@ -199,15 +156,17 @@ function buildReview() {
       <div class="review-row"><span class="rl">Last working day</span><span class="rv">${document.getElementById('empLastDay').value}</span></div>
     </div>
     <div style="border-top:1px solid var(--border);padding-top:1rem;margin-top:0.5rem;">
-      <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;">Items returning</div>
+      <div class="review-sub-label">Items returning</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:1rem;">
         ${checkedItems.length ? checkedItems.map(it => `<span class="tag green">&#10003; ${it}</span>`).join('') : '<span class="tag gray">No items checked</span>'}
       </div>
-      <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;">Photos uploaded</div>
-      <div style="margin-bottom:1rem;font-size:13px;color:var(--text);">${uploadedFiles.length ? uploadedFiles.map(f => `<span class="tag blue">&#128196; ${f.name}</span>`).join(' ') : '<span class="tag gray">No files uploaded</span>'}</div>
-      <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;">Document handover</div>
-      <div style="margin-bottom:1rem;font-size:13px;color:var(--text);">${docMethod}</div>
-      <div style="font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:0.5px;">Documents (${filledDocs.length})</div>
+      <div class="review-sub-label">Photos / files to upload</div>
+      <div style="margin-bottom:1rem;font-size:13px;">
+        ${uploadedFiles.length ? uploadedFiles.map(f => `<span class="tag blue">&#128196; ${f.name}</span>`).join(' ') : '<span class="tag gray">No files selected</span>'}
+      </div>
+      <div class="review-sub-label">Document handover</div>
+      <div style="margin-bottom:1rem;font-size:13px;">${docMethod}</div>
+      <div class="review-sub-label">Documents (${filledDocs.length})</div>
       ${filledDocs.length ? `<table style="width:100%;font-size:13px;border-collapse:collapse;">${filledDocs.map(d => `<tr><td style="padding:6px 0;border-bottom:1px solid var(--border);width:40%">${d.name}</td><td style="padding:6px;color:var(--muted);width:25%">${d.type}</td><td style="padding:6px;color:var(--muted)">${d.notes}</td></tr>`).join('')}</table>` : '<span class="tag gray">No documents listed</span>'}
     </div>
   `;
@@ -219,41 +178,77 @@ function toggleConfirm() {
   document.getElementById('submitBtn').disabled = !confirmed;
 }
 
-// ======================== GOOGLE SHEETS SUBMIT ========================
+// ======================== SPINNER HELPERS ========================
+function showSpinner(msg) {
+  document.getElementById('spinnerOverlay').style.display = 'flex';
+  document.getElementById('spinnerMsg').textContent = msg || 'Please wait…';
+}
+function updateSpinner(msg) {
+  document.getElementById('spinnerMsg').textContent = msg || '';
+}
+function hideSpinner() {
+  document.getElementById('spinnerOverlay').style.display = 'none';
+}
+
+// ======================== FILE → BASE64 (chunked-safe) ========================
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload  = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ======================== UPLOAD FILES TO DRIVE ========================
+// Files up to ~20 MB are sent as base64 one at a time.
+// Apps Script accepts them and saves each into a named Drive folder.
+async function uploadFilesToDrive(employeeName, empId, refCode) {
+  const url = (typeof CONFIG !== 'undefined') ? CONFIG.SHEETS_WEBHOOK_URL : '';
+  if (!url || uploadedFiles.length === 0) return { success: true, skipped: true, folderName: '' };
+
+  const folderName = `${employeeName} (${empId}) — ${refCode}`;
+  let allOk = true;
+
+  for (let i = 0; i < uploadedFiles.length; i++) {
+    const file = uploadedFiles[i];
+    updateSpinner(`Uploading file ${i + 1} of ${uploadedFiles.length}: ${file.name}`);
+
+    try {
+      const base64 = await fileToBase64(file);
+      const payload = {
+        action:    'uploadFile',
+        folderName,
+        refCode,
+        fileName:  file.name,
+        mimeType:  file.type || 'application/octet-stream',
+        base64Data: base64,
+      };
+      const fd = new FormData();
+      fd.append('payload', JSON.stringify(payload));
+      // no-cors: browser blocks reading the response but the request reaches Apps Script fine
+      await fetch(url, { method: 'POST', mode: 'no-cors', body: fd });
+    } catch (err) {
+      console.error('Upload error:', file.name, err);
+      allOk = false;
+    }
+  }
+
+  return { success: allOk, folderName };
+}
+
+// ======================== SEND FORM TO SHEETS ========================
 async function sendToGoogleSheets(data) {
   const url = (typeof CONFIG !== 'undefined') ? CONFIG.SHEETS_WEBHOOK_URL : '';
   if (!url) return { success: false, skipped: true };
-
-  const statusEl = document.getElementById('sheetsStatus');
-  statusEl.style.display = 'block';
-  statusEl.className = 'sheets-status-saving';
-  statusEl.textContent = data.files && data.files.length
-    ? 'Saving record and uploading files to Google Drive...'
-    : 'Saving to Google Sheets...';
-
   try {
-    // Use no-cors mode — Apps Script returns a redirect that causes CORS issues
-    // We send as form data for maximum compatibility
-    const formData = new FormData();
-    formData.append('payload', JSON.stringify(data));
-
-    await fetch(url, {
-      method: 'POST',
-      mode: 'no-cors',
-      body: formData,
-    });
-
-    // With no-cors we can't read the response, so assume success if no exception
-    statusEl.className = 'sheets-status-success';
-    statusEl.textContent = data.files && data.files.length
-      ? 'Request sent to Google Sheets and Drive. Check sheet File Links for confirmation.'
-      : 'Request sent to Google Sheets.';
+    const fd = new FormData();
+    fd.append('payload', JSON.stringify({ action: 'submitForm', ...data }));
+    await fetch(url, { method: 'POST', mode: 'no-cors', body: fd });
     return { success: true };
   } catch (err) {
-    statusEl.className = 'sheets-status-error';
-    statusEl.textContent = 'Could not reach Google Sheets or Drive - record saved locally only.';
     console.error('Sheets error:', err);
-    return { success: false, error: err.message };
+    return { success: false };
   }
 }
 
@@ -261,57 +256,59 @@ async function sendToGoogleSheets(data) {
 async function submitForm() {
   const submitBtn = document.getElementById('submitBtn');
   submitBtn.disabled = true;
-  submitBtn.textContent = uploadedFiles.length ? 'Uploading...' : 'Submitting...';
 
-  const ref = 'OFF-' + Math.floor(1000 + Math.random() * 9000);
-  const checkedItems = checkItems.filter(i => i.checked).map(i => i.name);
-  const filledDocs = docRows.filter(r => r.name.trim());
+  const ref     = 'OFF-' + Math.floor(1000 + Math.random() * 9000);
+  const empName = document.getElementById('empName').value;
+  const empId   = document.getElementById('empId').value;
 
-  let filePayloads = [];
-  try {
-    filePayloads = await buildUploadPayload(uploadedFiles);
-  } catch (err) {
-    alert(err.message);
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit offboarding ✓';
-    return;
+  // ── Step 1: Upload files to Google Drive ──
+  let driveFolderName = '';
+  if (uploadedFiles.length > 0) {
+    showSpinner(`Uploading file 1 of ${uploadedFiles.length}…`);
+    const driveResult = await uploadFilesToDrive(empName, empId, ref);
+    driveFolderName = driveResult.folderName || '';
   }
 
+  // ── Step 2: Submit form data to Sheets ──
+  updateSpinner('Saving record to Google Sheets…');
+  showSpinner('Saving record to Google Sheets…');
+
   const sub = {
-    id: document.getElementById('empId').value,
-    name: document.getElementById('empName').value,
-    desig: document.getElementById('empDesig').value,
-    dept: document.getElementById('empDept').value || '—',
-    lastDay: document.getElementById('empLastDay').value,
-    email: document.getElementById('empEmail').value,
-    items: checkItems.map(i => i.name),
-    checkedItems,
-    docMethod: docOptionSelected,
-    docRecipient: document.getElementById('recipientName').value,
-    docs: filledDocs,
-    status: 'submitted',
-    submittedAt: new Date().toISOString(),
-    refCode: ref,
-    fileCount: uploadedFiles.length,
-    files: filePayloads,
+    id:             empId,
+    name:           empName,
+    desig:          document.getElementById('empDesig').value,
+    dept:           document.getElementById('empDept').value || '—',
+    lastDay:        document.getElementById('empLastDay').value,
+    email:          document.getElementById('empEmail').value,
+    items:          checkItems.map(i => i.name),
+    checkedItems:   checkItems.filter(i => i.checked).map(i => i.name),
+    docMethod:      docOptionSelected,
+    docRecipient:   document.getElementById('recipientName').value,
+    docs:           docRows.filter(r => r.name.trim()),
+    status:         'submitted',
+    submittedAt:    new Date().toISOString(),
+    refCode:        ref,
+    fileCount:      uploadedFiles.length,
+    driveFolderName,
+    driveFolder:    '',
   };
 
-  // Send to Google Sheets (non-blocking if no URL configured)
   const sheetsResult = await sendToGoogleSheets(sub);
-
-  delete sub.files;
-
-  // Store locally
   submissions.unshift(sub);
+  hideSpinner();
 
-  // Navigate to success page
+  // ── Step 3: Success page ──
   document.getElementById('page-' + currentPage).classList.remove('active');
   document.getElementById('page-success').classList.add('active');
   document.getElementById('refCode').textContent = 'REF: ' + ref;
 
+  if (driveFolderName) {
+    const el = document.getElementById('driveFolderInfo');
+    if (el) { el.style.display = 'block'; el.innerHTML = `&#128193; Files saved to Drive folder: <strong>${driveFolderName}</strong>`; }
+  }
   if (sheetsResult.success) {
     const el = document.getElementById('sheetsConfirm');
-    if (el) { el.style.display = 'block'; }
+    if (el) el.style.display = 'block';
   }
 
   document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
@@ -322,15 +319,13 @@ async function submitForm() {
 // ======================== ADMIN ========================
 function toggleAdminMode() {
   isAdminMode = !isAdminMode;
-  document.getElementById('stepNav').style.display = isAdminMode ? 'none' : '';
-  document.getElementById('adminNav').style.display = isAdminMode ? 'flex' : 'none';
+  document.getElementById('stepNav').style.display   = isAdminMode ? 'none' : '';
+  document.getElementById('adminNav').style.display  = isAdminMode ? 'flex' : 'none';
   document.getElementById('adminToggle').textContent = isAdminMode ? '← Back to portal' : '🔒 Admin panel';
-
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   if (isAdminMode) {
     document.getElementById('page-admin').classList.add('active');
-    renderAdminMetrics();
-    renderAdminTable();
+    renderAdminMetrics(); renderAdminTable();
   } else {
     currentPage = 0;
     document.getElementById('page-0').classList.add('active');
@@ -338,13 +333,11 @@ function toggleAdminMode() {
   }
 }
 
-function showAdminPage(p) {}
-
 function renderAdminMetrics() {
-  const total = submissions.length;
-  const done = submissions.filter(s => s.status === 'submitted').length;
-  const pending = submissions.filter(s => s.status === 'pending').length;
-  const totalItems = submissions.reduce((a, s) => (a + (s.checkedItems || []).length), 0);
+  const total      = submissions.length;
+  const done       = submissions.filter(s => s.status === 'submitted').length;
+  const pending    = submissions.filter(s => s.status === 'pending').length;
+  const totalItems = submissions.reduce((a, s) => a + (s.checkedItems||[]).length, 0);
   document.getElementById('adminMetrics').innerHTML = `
     <div class="admin-metric"><div class="am-label">Total employees</div><div class="am-value blue">${total}</div></div>
     <div class="admin-metric"><div class="am-label">Submitted</div><div class="am-value green">${done}</div></div>
@@ -354,56 +347,49 @@ function renderAdminMetrics() {
 }
 
 function setSort(key) {
-  if (adminSortKey === key) adminSortDir *= -1;
-  else { adminSortKey = key; adminSortDir = 1; }
+  if (adminSortKey === key) adminSortDir *= -1; else { adminSortKey = key; adminSortDir = 1; }
   document.getElementById('adminSort').value = key;
   renderAdminTable();
 }
 
 function renderAdminTable() {
-  const search = (document.getElementById('adminSearch').value || '').toLowerCase();
-  const filter = document.getElementById('adminFilter').value;
-  adminSortKey = document.getElementById('adminSort').value;
+  const search  = (document.getElementById('adminSearch').value || '').toLowerCase();
+  const filter  = document.getElementById('adminFilter').value;
+  adminSortKey  = document.getElementById('adminSort').value;
 
-  ['id', 'name', 'dept', 'date'].forEach(k => {
+  ['id','name','dept','date'].forEach(k => {
     const el = document.getElementById('sarr-' + k);
     if (el) { el.textContent = adminSortKey === k ? (adminSortDir === 1 ? '▲' : '▼') : ''; el.className = 'sort-arrow' + (adminSortKey === k ? ' active' : ''); }
   });
 
   let list = submissions.filter(s => {
-    const matchSearch = !search || s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search) || (s.dept || '').toLowerCase().includes(search);
-    const matchFilter = filter === 'all' || s.status === filter;
-    return matchSearch && matchFilter;
+    const ms = !search || s.name.toLowerCase().includes(search) || s.id.toLowerCase().includes(search) || (s.dept||'').toLowerCase().includes(search);
+    return ms && (filter === 'all' || s.status === filter);
   });
 
-  const keyMap = { name: 'name', id: 'id', date: 'lastDay', dept: 'dept' };
-  list.sort((a, b) => {
-    const av = (a[keyMap[adminSortKey]] || '').toLowerCase();
-    const bv = (b[keyMap[adminSortKey]] || '').toLowerCase();
-    return av < bv ? -adminSortDir : av > bv ? adminSortDir : 0;
-  });
+  const km = { name:'name', id:'id', date:'lastDay', dept:'dept' };
+  list.sort((a, b) => { const av=(a[km[adminSortKey]]||'').toLowerCase(), bv=(b[km[adminSortKey]]||'').toLowerCase(); return av<bv?-adminSortDir:av>bv?adminSortDir:0; });
 
   const tbody = document.getElementById('adminTableBody');
-  if (!list.length) { tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:2rem;color:var(--muted)">No records found</td></tr>`; return; }
+  if (!list.length) { tbody.innerHTML = `<tr><td colspan="9" style="text-align:center;padding:2rem;color:var(--muted)">No records found</td></tr>`; return; }
 
   tbody.innerHTML = list.map(s => {
-    const pct = s.items.length ? Math.round(s.checkedItems.length / s.items.length * 100) : 100;
-    const statusHtml = `<span class="badge ${s.status}">${s.status === 'submitted' ? 'Submitted' : 'Pending'}</span>`;
-    const docMethod = s.docMethod === 1 ? 'Admin team' : s.docMethod === 2 ? `Person: ${s.docRecipient}` : '—';
+    const pct   = s.items.length ? Math.round(s.checkedItems.length/s.items.length*100) : 100;
+    const badge = `<span class="badge ${s.status}">${s.status==='submitted'?'Submitted':'Pending'}</span>`;
+    const doc   = s.docMethod===1?'Admin team':s.docMethod===2?`Person: ${s.docRecipient}`:'—';
+    const drive = s.driveFolderName
+      ? `<span title="${s.driveFolderName}" style="font-size:11px;color:var(--accent);">&#128193; ${s.fileCount||0} file(s)</span>`
+      : `<span style="font-size:11px;color:var(--muted);">—</span>`;
     return `<tr style="cursor:pointer" onclick="showDetail('${s.refCode}')">
       <td style="font-family:'DM Mono',monospace;font-size:12px;color:var(--muted)">${s.id}</td>
-      <td style="font-weight:500">${s.name}<br><span style="font-size:11px;color:var(--muted)">${s.desig || ''}</span></td>
+      <td style="font-weight:500">${s.name}<br><span style="font-size:11px;color:var(--muted)">${s.desig||''}</span></td>
       <td>${s.dept}</td>
       <td style="font-family:'DM Mono',monospace;font-size:12px">${s.lastDay}</td>
-      <td>
-        <div style="display:flex;align-items:center;gap:8px;">
-          <div style="width:60px;height:5px;border-radius:3px;background:var(--border);overflow:hidden;"><div style="width:${pct}%;height:100%;background:${pct === 100 ? 'var(--success)' : pct >= 50 ? 'var(--warning)' : 'var(--danger)'}"></div></div>
-          <span style="font-size:12px;color:var(--muted)">${s.checkedItems.length}/${s.items.length}</span>
-        </div>
-      </td>
-      <td style="font-size:12px;color:var(--muted)">${docMethod}</td>
-      <td>${statusHtml}</td>
-      <td><span style="font-size:12px;color:var(--accent);cursor:pointer">View &rarr;</span></td>
+      <td><div style="display:flex;align-items:center;gap:8px;"><div style="width:60px;height:5px;border-radius:3px;background:var(--border);overflow:hidden;"><div style="width:${pct}%;height:100%;background:${pct===100?'var(--success)':pct>=50?'var(--warning)':'var(--danger)'}"></div></div><span style="font-size:12px;color:var(--muted)">${s.checkedItems.length}/${s.items.length}</span></div></td>
+      <td>${drive}</td>
+      <td style="font-size:12px;color:var(--muted)">${doc}</td>
+      <td>${badge}</td>
+      <td><span style="font-size:12px;color:var(--accent)">View &rarr;</span></td>
     </tr>`;
   }).join('');
 }
@@ -411,31 +397,33 @@ function renderAdminTable() {
 function showDetail(refCode) {
   const s = submissions.find(x => x.refCode === refCode);
   if (!s) return;
-  const checkedTags = (s.items || []).map(it => `<span class="expand-tag${s.checkedItems.includes(it) ? ' checked' : ''}">${s.checkedItems.includes(it) ? '✓ ' : ''} ${it}</span>`).join('');
-  const docRows2 = (s.docs || []).map(d => `<tr><td style="padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)">${d.name}</td><td style="padding:6px;font-size:12px;color:var(--muted)">${d.type}</td><td style="padding:6px;font-size:12px;color:var(--muted)">${d.notes}</td><td style="font-size:12px;color:var(--muted)">${d.copies}</td></tr>`).join('');
+  const tags    = (s.items||[]).map(it => `<span class="expand-tag${s.checkedItems.includes(it)?' checked':''}">${s.checkedItems.includes(it)?'✓ ':''} ${it}</span>`).join('');
+  const docHtml = (s.docs||[]).map(d => `<tr><td style="padding:6px 0;font-size:13px;border-bottom:1px solid var(--border)">${d.name}</td><td style="padding:6px;font-size:12px;color:var(--muted)">${d.type}</td><td style="padding:6px;font-size:12px;color:var(--muted)">${d.notes}</td><td style="font-size:12px;color:var(--muted)">${d.copies}</td></tr>`).join('');
+  const driveSec = s.driveFolderName ? `
+    <div class="detail-section">
+      <h3>Google Drive uploads</h3>
+      <div class="detail-field"><span class="df-label">Folder name</span><span class="df-val">&#128193; ${s.driveFolderName}</span></div>
+      <div class="detail-field"><span class="df-label">Files</span><span class="df-val">${s.fileCount||0} file(s) uploaded</span></div>
+      ${s.driveFolder?`<div class="detail-field"><span class="df-label">Drive link</span><span class="df-val"><a href="${s.driveFolder}" target="_blank" style="color:var(--accent)">Open folder ↗</a></span></div>`:''}
+    </div>` : '';
 
   document.getElementById('detailBox').innerHTML = `
-    <div class="detail-header">
-      <h2>${s.name}</h2>
-      <button class="close-btn" onclick="document.getElementById('detailModal').classList.remove('open')">Close</button>
-    </div>
+    <div class="detail-header"><h2>${s.name}</h2><button class="close-btn" onclick="document.getElementById('detailModal').classList.remove('open')">Close</button></div>
     <div class="detail-section">
       <h3>Personal info</h3>
       <div class="detail-field"><span class="df-label">Employee ID</span><span class="df-val">${s.id}</span></div>
       <div class="detail-field"><span class="df-label">Designation</span><span class="df-val">${s.desig}</span></div>
       <div class="detail-field"><span class="df-label">Department</span><span class="df-val">${s.dept}</span></div>
       <div class="detail-field"><span class="df-label">Last working day</span><span class="df-val">${s.lastDay}</span></div>
-      <div class="detail-field"><span class="df-label">Email</span><span class="df-val">${s.email || '—'}</span></div>
+      <div class="detail-field"><span class="df-label">Email</span><span class="df-val">${s.email||'—'}</span></div>
       <div class="detail-field"><span class="df-label">Reference</span><span class="df-val" style="font-family:'DM Mono',monospace;color:var(--accent)">${s.refCode}</span></div>
-      <div class="detail-field"><span class="df-label">Submitted</span><span class="df-val">${new Date(s.submittedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
+      <div class="detail-field"><span class="df-label">Submitted</span><span class="df-val">${new Date(s.submittedAt).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}</span></div>
     </div>
+    <div class="detail-section"><h3>Items checklist</h3><div class="expand-tags">${tags}</div></div>
+    ${driveSec}
     <div class="detail-section">
-      <h3>Items checklist</h3>
-      <div class="expand-tags">${checkedTags}</div>
-    </div>
-    <div class="detail-section">
-      <h3>Document handover — ${s.docMethod === 1 ? 'Admin team' : s.docMethod === 2 ? 'Specific person: ' + s.docRecipient : 'Not set'}</h3>
-      ${docRows2 ? `<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;font-size:11px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border)">Document</th><th style="text-align:left;font-size:11px;color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--border)">Type</th><th style="text-align:left;font-size:11px;color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--border)">Notes</th><th style="text-align:left;font-size:11px;color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--border)">Copies</th></tr></thead><tbody>${docRows2}</tbody></table>` : '<p style="font-size:13px;color:var(--muted)">No documents listed.</p>'}
+      <h3>Document handover — ${s.docMethod===1?'Admin team':s.docMethod===2?'Specific person: '+s.docRecipient:'Not set'}</h3>
+      ${docHtml?`<table style="width:100%;border-collapse:collapse"><thead><tr><th style="text-align:left;font-size:11px;color:var(--muted);padding:4px 0;border-bottom:1px solid var(--border)">Document</th><th style="text-align:left;font-size:11px;color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--border)">Type</th><th style="text-align:left;font-size:11px;color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--border)">Notes</th><th style="text-align:left;font-size:11px;color:var(--muted);padding:4px 6px;border-bottom:1px solid var(--border)">Copies</th></tr></thead><tbody>${docHtml}</tbody></table>`:'<p style="font-size:13px;color:var(--muted)">No documents listed.</p>'}
     </div>
   `;
   document.getElementById('detailModal').classList.add('open');
