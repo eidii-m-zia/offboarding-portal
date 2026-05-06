@@ -23,7 +23,7 @@ const DRIVE_FOLDER_NAME = "Offboarding Uploads";
 
 // Optional: paste a Google Drive folder ID here to save uploads into an existing folder.
 // Leave blank to let the script create/use "Offboarding Uploads" in your Drive.
-const DRIVE_FOLDER_ID = "https://drive.google.com/drive/folders/1VnGWik_eYfo5-ToAfY1gpQkeCjd9pNfI";
+const DRIVE_FOLDER_ID = "";
 
 // Column headers — must match the order in appendRow() below
 const HEADERS = [
@@ -108,7 +108,12 @@ function ensureHeaders(sheet) {
 
 function getUploadFolder() {
   if (DRIVE_FOLDER_ID) {
-    return DriveApp.getFolderById(DRIVE_FOLDER_ID);
+    try {
+      return DriveApp.getFolderById(DRIVE_FOLDER_ID);
+    } catch (err) {
+      // Fallback to named folder when ID is invalid or inaccessible.
+      Logger.log("DRIVE_FOLDER_ID inaccessible, falling back to folder name: " + err.message);
+    }
   }
 
   const folders = DriveApp.getFoldersByName(DRIVE_FOLDER_NAME);
