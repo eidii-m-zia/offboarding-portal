@@ -183,10 +183,16 @@ function doPost(e) {
       ? new Date(data.submittedAt).toLocaleString("en-GB")
       : new Date().toLocaleString("en-GB");
 
-    const savedFiles = saveUploadedFiles(data.files || [], data.refCode || "", data.id || "");
-    const fileLinksStr = savedFiles
-      .map(file => `${file.name}: ${file.url}`)
-      .join(" | ");
+    let fileLinksStr = "";
+    try {
+      const savedFiles = saveUploadedFiles(data.files || [], data.refCode || "", data.id || "");
+      fileLinksStr = savedFiles.map(file => `${file.name}: ${file.url}`).join(" | ");
+      if ((data.files || []).length && !savedFiles.length) {
+        fileLinksStr = "UPLOAD_WARNING: files payload received but no files were created";
+      }
+    } catch (uploadErr) {
+      fileLinksStr = `UPLOAD_ERROR: ${uploadErr.message}`;
+    }
 
     // Append the row in the same order as HEADERS
     sheet.appendRow([

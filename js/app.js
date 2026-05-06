@@ -246,8 +246,8 @@ async function sendToGoogleSheets(data) {
     // With no-cors we can't read the response, so assume success if no exception
     statusEl.className = 'sheets-status-success';
     statusEl.textContent = data.files && data.files.length
-      ? 'Record saved and files sent to Google Drive'
-      : 'Record saved to Google Sheets';
+      ? 'Request sent to Google Sheets and Drive. Check sheet File Links for confirmation.'
+      : 'Request sent to Google Sheets.';
     return { success: true };
   } catch (err) {
     statusEl.className = 'sheets-status-error';
