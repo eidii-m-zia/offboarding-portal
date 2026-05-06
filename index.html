@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Staff Offboarding Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="shell">
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <div><div class="brand-name">Offboarding</div><div class="brand-sub">Staff Portal</div></div>
+    </div>
+
+    <ul class="steps" id="stepNav">
+      <li class="step active" data-step="0"><div class="step-num">1</div><span class="step-label">Personal info</span></li>
+      <li class="step" data-step="1"><div class="step-num">2</div><span class="step-label">Handover</span></li>
+      <li class="step" data-step="2"><div class="step-num">3</div><span class="step-label">Documents</span></li>
+      <li class="step" data-step="3"><div class="step-num">4</div><span class="step-label">Review & submit</span></li>
+    </ul>
+
+    <div class="admin-nav" id="adminNav">
+      <a class="active" onclick="showAdminPage('dashboard')">&#9632; Dashboard</a>
+    </div>
+
+    <div class="sidebar-spacer"></div>
+    <div class="sidebar-bottom">
+      <div style="margin-bottom:6px;">
+        <a onclick="toggleAdminMode()" style="font-size:11px;color:var(--accent);cursor:pointer;text-decoration:none;" id="adminToggle">&#128274; Admin panel</a>
+      </div>
+      v1.0.0 &bull; 2026
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main">
+
+    <!-- PAGE 1: PERSONAL INFO -->
+    <div class="page active" id="page-0">
+      <div class="page-header">
+        <h1>Personal information</h1>
+        <p>Please fill in your details below. Your information will be recorded securely with the admin team.</p>
+      </div>
+      <div class="card">
+        <div class="card-title">Employee details</div>
+        <div class="field-row">
+          <div class="field">
+            <label>Employee ID <span class="req">*</span></label>
+            <input type="text" id="empId" placeholder="e.g. EMP-0042">
+          </div>
+          <div class="field">
+            <label>Full name <span class="req">*</span></label>
+            <input type="text" id="empName" placeholder="e.g. Sarah Chen">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Designation <span class="req">*</span></label>
+            <input type="text" id="empDesig" placeholder="e.g. Senior Marketing Executive">
+          </div>
+          <div class="field">
+            <label>Department</label>
+            <input type="text" id="empDept" placeholder="e.g. Marketing">
+          </div>
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label>Last working date <span class="req">*</span></label>
+            <input type="date" id="empLastDay">
+          </div>
+          <div class="field">
+            <label>Work email</label>
+            <input type="email" id="empEmail" placeholder="e.g. sarah@company.com">
+          </div>
+        </div>
+      </div>
+      <div class="nav-btns">
+        <button class="btn-primary" onclick="goToPage(1)">Continue to handover &rarr;</button>
+      </div>
+    </div>
+
+    <!-- PAGE 2: HANDOVER -->
+    <div class="page" id="page-1">
+      <div class="page-header">
+        <h1>Handover — supported materials</h1>
+        <p>Check off all items you are returning. Upload photos as evidence and add any extra items below.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Items checklist</div>
+        <div class="check-grid" id="checkGrid"></div>
+        <div class="add-item-row">
+          <input type="text" id="newItemInput" placeholder="Add a custom item...">
+          <button class="btn-ghost" onclick="addCustomItem()">+ Add item</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Photo evidence (optional)</div>
+        <p style="font-size:13px;color:var(--muted);">Upload photos of the items you are returning for documentation.</p>
+        <div class="upload-zone" id="uploadZone" onclick="document.getElementById('photoInput').click()" ondragover="handleDrag(event,true)" ondragleave="handleDrag(event,false)" ondrop="handleDrop(event)">
+          <input type="file" id="photoInput" multiple accept="image/*,.pdf" onchange="handleFiles(this.files)">
+          <div style="font-size:1.5rem;margin-bottom:6px;">&#128248;</div>
+          <p>Click to upload or drag & drop here</p>
+          <p style="font-size:11px;margin-top:4px;">Images & PDF, up to 10 files</p>
+        </div>
+        <div class="file-list" id="fileList"></div>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn-secondary" onclick="goToPage(0)">&larr; Back</button>
+        <button class="btn-primary" onclick="goToPage(2)">Continue to documents &rarr;</button>
+      </div>
+    </div>
+
+    <!-- PAGE 3: DOCUMENTS -->
+    <div class="page" id="page-2">
+      <div class="page-header">
+        <h1>Document handover</h1>
+        <p>Select how your documents will be handed over, then fill in the handover chart.</p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Handover method</div>
+        <div class="doc-options">
+          <div class="doc-option" id="docOpt1" onclick="selectDocOption(1)">
+            <div class="doc-option-icon">&#127970;</div>
+            <h4>Admin team</h4>
+            <p>The admin team will collect your documents directly.</p>
+          </div>
+          <div class="doc-option" id="docOpt2" onclick="selectDocOption(2)">
+            <div class="doc-option-icon">&#128100;</div>
+            <h4>Specific person</h4>
+            <p>Hand documents to a named recipient of your choice.</p>
+          </div>
+        </div>
+        <div id="recipientField" style="display:none;">
+          <div class="field">
+            <label>Recipient name <span class="req">*</span></label>
+            <input type="text" id="recipientName" placeholder="Enter the full name of the recipient">
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Document chart</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:1rem;">List all documents being handed over. Add as many rows as needed.</p>
+        <table class="doc-table" id="docTable">
+          <thead>
+            <tr>
+              <th style="width:35%">Document name</th>
+              <th style="width:20%">Type / format</th>
+              <th style="width:25%">Notes / location</th>
+              <th style="width:10%">Copies</th>
+              <th style="width:10%"></th>
+            </tr>
+          </thead>
+          <tbody id="docTableBody"></tbody>
+        </table>
+        <span class="doc-table add-row-btn" onclick="addDocRow()">&#43; Add document row</span>
+      </div>
+
+      <div class="nav-btns">
+        <button class="btn-secondary" onclick="goToPage(1)">&larr; Back</button>
+        <button class="btn-primary" onclick="goToPage(3)">Continue to review &rarr;</button>
+      </div>
+    </div>
+
+    <!-- PAGE 4: REVIEW -->
+    <div class="page" id="page-3">
+      <div class="page-header">
+        <h1>Review & submit</h1>
+        <p>Please review your information carefully before submitting.</p>
+      </div>
+      <div class="card" id="reviewContent"></div>
+      <div class="card">
+        <div class="confirm-box" id="confirmBox" onclick="toggleConfirm()">
+          <div class="cb-box">
+            <svg viewBox="0 0 12 12" fill="none"><polyline points="1.5,6 5,9.5 10.5,2.5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+          <p>I confirm that all information provided is accurate and complete. I understand that this submission will be recorded and shared with the HR/admin team.</p>
+        </div>
+        <div id="sheetsStatus" style="display:none;padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:1rem;"></div>
+        <div class="nav-btns">
+          <button class="btn-secondary" onclick="goToPage(2)">&larr; Back</button>
+          <button class="btn-primary" id="submitBtn" disabled onclick="submitForm()">Submit offboarding &#10003;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUCCESS PAGE -->
+    <div class="page" id="page-success">
+      <div class="success-page">
+        <div class="success-icon">&#10003;</div>
+        <h1>Submission complete</h1>
+        <p>Your offboarding form has been received and logged with the admin team. You will be contacted shortly with next steps.</p>
+        <div class="ref-code" id="refCode">REF: ...</div>
+        <p style="font-size:12px;margin-top:0.75rem;">Please keep this reference number for your records.</p>
+        <div id="sheetsConfirm" style="margin-top:1rem;font-size:13px;color:var(--success);display:none;">&#10003; Record saved to Google Sheets</div>
+      </div>
+    </div>
+
+    <!-- PAGE: ADMIN DASHBOARD -->
+    <div class="page" id="page-admin">
+      <div class="page-header">
+        <h1>Admin dashboard</h1>
+        <p>All offboarding submissions. Sort, search, and view full details for each employee.</p>
+      </div>
+
+      <div class="admin-metrics" id="adminMetrics"></div>
+
+      <div class="admin-toolbar">
+        <input type="text" id="adminSearch" placeholder="Search by name, ID, or department..." oninput="renderAdminTable()">
+        <select id="adminFilter" onchange="renderAdminTable()">
+          <option value="all">All statuses</option>
+          <option value="submitted">Submitted</option>
+          <option value="pending">Pending</option>
+        </select>
+        <select id="adminSort" onchange="renderAdminTable()">
+          <option value="name">Sort by name</option>
+          <option value="id">Sort by ID</option>
+          <option value="date">Sort by last day</option>
+          <option value="dept">Sort by department</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table class="atbl">
+          <thead>
+            <tr>
+              <th onclick="setSort('id')">ID <span class="sort-arrow" id="sarr-id"></span></th>
+              <th onclick="setSort('name')">Name <span class="sort-arrow" id="sarr-name">&#9650;</span></th>
+              <th onclick="setSort('dept')">Department <span class="sort-arrow" id="sarr-dept"></span></th>
+              <th onclick="setSort('date')">Last day <span class="sort-arrow" id="sarr-date"></span></th>
+              <th>Items returned</th>
+              <th>Documents</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="adminTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- POPUP: Admin team selected -->
+<div class="popup-overlay" id="adminPopup">
+  <div class="popup">
+    <div class="popup-icon">&#128226;</div>
+    <h3>Admin team will collect</h3>
+    <p>The admin team will collect the documents from you as soon as possible. Please keep your documents ready and ensure they are labelled clearly.</p>
+    <button class="btn-primary" onclick="closePopup()">Got it, continue</button>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="detail-modal" id="detailModal">
+  <div class="detail-box" id="detailBox"></div>
+</div>
+
+<script src="js/config.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
